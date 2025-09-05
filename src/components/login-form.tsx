@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { School, Lock, User, Eye, EyeOff } from "lucide-react";
+import { School, Lock, User, Eye, EyeOff, LogIn } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,26 @@ const formSchema = z.object({
   password: z.string().min(1, { message: "Password tidak boleh kosong." }),
   remember: z.boolean().default(false).optional(),
 });
+
+const createRipple = (event: React.MouseEvent<HTMLElement>) => {
+  const element = event.currentTarget;
+
+  const ripple = document.createElement('span');
+  ripple.classList.add('ripple');
+
+  const rect = element.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.width = ripple.style.height = `${size}px`;
+  ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+  ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+
+  element.appendChild(ripple);
+
+  setTimeout(() => {
+    ripple.remove();
+  }, 900);
+};
+
 
 export function LoginForm() {
   const router = useRouter();
@@ -101,9 +121,6 @@ export function LoginForm() {
     const { data, error } = await supabase.auth.signInWithPassword({
       email: emailToUse,
       password: values.password,
-      options: {
-        persistSession: values.remember, // Use remember me checkbox value
-      }
     });
 
     setIsLoading(false);
@@ -126,6 +143,10 @@ export function LoginForm() {
         router.push("/dashboard");
     }
   }
+  
+  const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    createRipple(event);
+  };
 
   return (
     <Card className="w-full max-w-md shadow-lg rounded-xl">
@@ -237,7 +258,13 @@ export function LoginForm() {
                   Lupa Password?
                 </Link>
             </div>
-            <Button type="submit" className="w-full text-base font-semibold py-6 bg-primary hover:bg-primary/90" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full text-base font-semibold py-6 bg-primary hover:bg-primary/90 nav-item active:scale-95 transition-transform" 
+              disabled={isLoading}
+              onClick={handleButtonClick}
+            >
+              <LogIn className="mr-2 h-5 w-5" />
               {isLoading ? 'Memproses...' : 'Login'}
             </Button>
           </form>

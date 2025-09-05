@@ -94,3 +94,25 @@
     font-family: 'Inter', sans-serif;
   }
 }
+
+@layer components {
+  .nav-item {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple-animation 900ms linear;
+    background-color: rgba(255, 255, 255, 0.7);
+  }
+
+  @keyframes ripple-animation {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+}
