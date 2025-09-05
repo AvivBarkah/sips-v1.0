@@ -116,6 +116,8 @@ export default function ParentDashboardPage() {
   
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [leaveToDelete, setLeaveToDelete] = React.useState<{request: LeaveRequest, isExtension: boolean} | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
+
 
   const [isCompleting, setIsCompleting] = React.useState(false);
   const [leaveToComplete, setLeaveToComplete] = React.useState<LeaveRequest | null>(null);
@@ -273,6 +275,11 @@ export default function ParentDashboardPage() {
     });
   }
 
+  const handleDeleteClick = (data: {request: LeaveRequest, isExtension: boolean}) => {
+    setLeaveToDelete(data);
+    setShowDeleteDialog(true);
+  };
+
   const handleConfirmDelete = async () => {
     if (!leaveToDelete) return;
     
@@ -318,7 +325,7 @@ export default function ParentDashboardPage() {
         });
     } finally {
         setIsDeleting(false);
-        setLeaveToDelete(null);
+        setShowDeleteDialog(false);
     }
   };
 
@@ -758,7 +765,7 @@ export default function ParentDashboardPage() {
                             </Button>
                         )}
                          {canCancel && (
-                            <Button variant="destructive" size="sm" className="flex-1" onClick={() => setLeaveToDelete({request: finalActiveLeave, isExtension: isExtended})}>
+                            <Button variant="destructive" size="sm" className="flex-1" onClick={() => handleDeleteClick({request: finalActiveLeave, isExtension: isExtended})}>
                                 <CircleX className="mr-2 h-4 w-4" />
                                 {isExtended ? 'Batalkan Perpanjangan' : 'Batalkan'}
                             </Button>
@@ -826,7 +833,7 @@ export default function ParentDashboardPage() {
           )})}
         </div>
         
-         <AlertDialog open={!!leaveToDelete} onOpenChange={(open) => !open && setLeaveToDelete(null)}>
+         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
             <AlertDialogContent className="max-w-sm rounded-2xl">
                 <AlertDialogHeader className="text-center items-center space-y-0">
                     <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10 mb-4">
@@ -843,7 +850,7 @@ export default function ParentDashboardPage() {
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 pt-4">
-                    <AlertDialogCancel onClick={() => setLeaveToDelete(null)} disabled={isDeleting}>
+                    <AlertDialogCancel disabled={isDeleting}>
                         Jangan Batalkan
                     </AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirmDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
@@ -935,5 +942,7 @@ export default function ParentDashboardPage() {
     </>
   );
 }
+
+    
 
     
