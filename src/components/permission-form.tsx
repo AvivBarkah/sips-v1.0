@@ -364,7 +364,7 @@ export function PermissionForm({
     if (error) {
         toast({ variant: "destructive", title: "Gagal Mengirim", description: error.message });
     } else if (leaveRequestData) {
-        router.push(`/dashboard/izin/sukses?id=${leaveRequestData.id}`);
+        router.replace(`/dashboard/izin/sukses?id=${leaveRequestData.id}`);
         onSuccess(leaveRequestData.id);
     }
   }
@@ -684,5 +684,3 @@ export function PermissionForm({
     </div>
   );
 }
-
-    
