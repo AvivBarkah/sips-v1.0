@@ -95,24 +95,27 @@
   }
 }
 
-@layer components {
-  .nav-item {
-    position: relative;
-    overflow: hidden;
-  }
+/* === Ripple Effect Styles === */
+/* This is a global utility for creating a ripple effect on click. */
+/* It's used by the <Ripple> component. */
 
-  .ripple {
-    position: absolute;
-    border-radius: 50%;
-    transform: scale(0);
-    animation: ripple-animation 900ms linear;
-    background-color: rgba(255, 255, 255, 0.7);
-  }
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
 
-  @keyframes ripple-animation {
-    to {
-      transform: scale(4);
-      opacity: 0;
-    }
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation-name: ripple-animation;
+  animation-timing-function: linear;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+@keyframes ripple-animation {
+  to {
+    transform: scale(4);
+    opacity: 0;
   }
 }

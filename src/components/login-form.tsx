@@ -32,11 +32,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { isPhoneNumber } from "@/lib/phone-utils";
 import { findEmailByPhoneNumber } from "@/lib/phone-lookup";
+import Ripple from "@/components/ripple";
 
 const formSchema = z.object({
   emailOrPhone: z.string().min(1, { message: "Email atau nomor telepon tidak boleh kosong." })
     .refine((value) => {
-      // Check if it's a valid email or phone number
       const isEmail = z.string().email().safeParse(value).success;
       const isPhone = isPhoneNumber(value);
       return isEmail || isPhone;
@@ -44,26 +44,6 @@ const formSchema = z.object({
   password: z.string().min(1, { message: "Password tidak boleh kosong." }),
   remember: z.boolean().default(false).optional(),
 });
-
-const createRipple = (event: React.MouseEvent<HTMLElement>) => {
-  const element = event.currentTarget;
-
-  const ripple = document.createElement('span');
-  ripple.classList.add('ripple');
-
-  const rect = element.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height);
-  ripple.style.width = ripple.style.height = `${size}px`;
-  ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
-  ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
-
-  element.appendChild(ripple);
-
-  setTimeout(() => {
-    ripple.remove();
-  }, 900);
-};
-
 
 export function LoginForm() {
   const router = useRouter();
@@ -88,7 +68,6 @@ export function LoginForm() {
 
     let emailToUse = values.emailOrPhone;
 
-    // Check if input is phone number
     if (isPhoneNumber(values.emailOrPhone)) {
       try {
         const foundEmail = await findEmailByPhoneNumber(values.emailOrPhone);
@@ -117,7 +96,6 @@ export function LoginForm() {
       }
     }
 
-    // Proceed with Supabase authentication using email with remember me option
     const { data, error } = await supabase.auth.signInWithPassword({
       email: emailToUse,
       password: values.password,
@@ -144,10 +122,6 @@ export function LoginForm() {
     }
   }
   
-  const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    createRipple(event);
-  };
-
   return (
     <Card className="w-full max-w-md shadow-lg rounded-xl">
        <CardHeader className="text-center">
@@ -258,15 +232,16 @@ export function LoginForm() {
                   Lupa Password?
                 </Link>
             </div>
-            <Button 
-              type="submit" 
-              className="w-full text-base font-semibold py-6 bg-primary hover:bg-primary/90 nav-item active:scale-95 transition-transform" 
-              disabled={isLoading}
-              onClick={handleButtonClick}
-            >
-              {isLoading ? 'Memproses...' : 'Login'}
-              <LogIn strokeWidth={3} className="h-5 w-5" />
-            </Button>
+            <Ripple>
+              <Button 
+                type="submit" 
+                className="w-full text-base font-semibold py-6 bg-primary hover:bg-primary/90 active:scale-[.98] transition-transform" 
+                disabled={isLoading}
+              >
+                {isLoading ? 'Memproses...' : 'Login'}
+                <LogIn strokeWidth={3} className="h-5 w-5" />
+              </Button>
+            </Ripple>
           </form>
         </Form>
       </CardContent>
