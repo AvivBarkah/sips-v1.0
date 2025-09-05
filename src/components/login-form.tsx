@@ -264,8 +264,8 @@ export function LoginForm() {
               disabled={isLoading}
               onClick={handleButtonClick}
             >
-              <LogIn className="mr-2 h-5 w-5" />
               {isLoading ? 'Memproses...' : 'Login'}
+              <LogIn strokeWidth={3} className="h-5 w-5" />
             </Button>
           </form>
         </Form>
