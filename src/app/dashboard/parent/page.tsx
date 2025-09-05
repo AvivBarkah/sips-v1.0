@@ -39,6 +39,13 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +55,7 @@ import { format, differenceInCalendarDays, parseISO, isWithinInterval, addDays, 
 import { id } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { PermissionForm } from "@/components/permission-form";
 
 
 type ParentProfile = {
@@ -117,9 +125,16 @@ export default function ParentDashboardPage() {
   
   const [showExtensionDialog, setShowExtensionDialog] = React.useState(false);
   const [extensionDialogData, setExtensionDialogData] = React.useState<{student: StudentData, leave: LeaveRequest} | null>(null);
+  
+  // State for the sheet
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [sheetData, setSheetData] = React.useState<{ studentId: string; extendLeaveId?: string; isLate?: boolean; lateType?: 'new-late' | 'extend-late' } | null>(null);
 
-  const [showExtensionConfirmDialog, setShowExtensionConfirmDialog] = React.useState(false);
-  const [extensionConfirmData, setExtensionConfirmData] = React.useState<{studentId: string, leaveId: string} | null>(null);
+  const openPermissionSheet = (data: { studentId: string; extendLeaveId?: string; isLate?: boolean; lateType?: 'new-late' | 'extend-late' }) => {
+    setSheetData(data);
+    setIsSheetOpen(true);
+  };
+
 
   // Derived state for filtering dropdowns
   const availableYears = React.useMemo(() => {
@@ -251,7 +266,11 @@ export default function ParentDashboardPage() {
   
   const handleLateSubmissionContinue = () => {
     if (!lateSubmissionStudentId) return;
-    router.push(`/dashboard/izin-susulan?studentId=${lateSubmissionStudentId}&type=${lateSubmissionType}`);
+    openPermissionSheet({ 
+        studentId: lateSubmissionStudentId, 
+        isLate: true, 
+        lateType: lateSubmissionType 
+    });
   }
 
   const handleConfirmDelete = async () => {
@@ -364,9 +383,9 @@ export default function ParentDashboardPage() {
       if (!extensionDialogData) return;
       
       if (action === 'extend') {
-          router.push(`/dashboard/izin?studentId=${extensionDialogData.student.id}&extend=${extensionDialogData.leave.id}`);
+          openPermissionSheet({ studentId: extensionDialogData.student.id, extendLeaveId: extensionDialogData.leave.id });
       } else {
-          router.push(`/dashboard/izin?studentId=${extensionDialogData.student.id}`);
+          openPermissionSheet({ studentId: extensionDialogData.student.id });
       }
       setShowExtensionDialog(false);
   }
@@ -384,7 +403,7 @@ export default function ParentDashboardPage() {
           setExtensionDialogData({ student, leave: extendableLeave });
           setShowExtensionDialog(true);
       } else {
-          router.push(`/dashboard/izin?studentId=${student.id}`);
+          openPermissionSheet({ studentId: student.id });
       }
   }
 
@@ -440,6 +459,7 @@ export default function ParentDashboardPage() {
   }
 
   return (
+    <>
     <div className="flex min-h-screen w-full flex-col bg-muted/10">
        <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -726,10 +746,7 @@ export default function ParentDashboardPage() {
                     {finalActiveLeave ? (
                      <>
                         {canExtend && isCurrentPeriodActive && (
-                           <Button variant="outline" size="sm" className="w-full flex-1" onClick={() => {
-                              setExtensionConfirmData({ studentId: student.id, leaveId: finalActiveLeave.id });
-                              setShowExtensionConfirmDialog(true);
-                           }}>
+                           <Button variant="outline" size="sm" className="w-full flex-1" onClick={() => openPermissionSheet({ studentId: student.id, extendLeaveId: finalActiveLeave.id })}>
                                <RefreshCw className="mr-2 h-4 w-4" />
                                Perpanjang
                            </Button>
@@ -886,33 +903,36 @@ export default function ParentDashboardPage() {
             </AlertDialogContent>
         </AlertDialog>
 
-        <AlertDialog open={showExtensionConfirmDialog} onOpenChange={setShowExtensionConfirmDialog}>
-            <AlertDialogContent className="max-w-sm rounded-2xl">
-                <AlertDialogHeader className="text-center items-center">
-                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10 mb-4">
-                        <RefreshCw className="h-6 w-6 text-green-600" />
-                    </div>
-                    <AlertDialogTitle className="text-lg">Konfirmasi Perpanjangan Izin</AlertDialogTitle>
-                    <AlertDialogDescription className="pt-2">
-                       Anda akan memperpanjang izin yang sedang aktif. Anda akan diarahkan ke formulir perpanjangan. Lanjutkan?
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="pt-4">
-                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => {
-                        if (extensionConfirmData) {
-                            router.push(`/dashboard/izin?studentId=${extensionConfirmData.studentId}&extend=${extensionConfirmData.leaveId}`);
-                        }
-                        setShowExtensionConfirmDialog(false);
-                    }}>
-                        Lanjutkan
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-
       </main>
     </div>
+    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-full sm:w-full lg:w-[900px] sm:max-w-none p-0 flex flex-col">
+            <SheetHeader className="p-6 pb-2">
+                <SheetTitle className="text-2xl">
+                    {sheetData?.isLate ? 'Formulir Izin Susulan' : 'Formulir Perizinan Siswa'}
+                </SheetTitle>
+                <SheetDescription>
+                    Lengkapi formulir di bawah ini untuk mengajukan izin.
+                </SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto">
+                {sheetData && (
+                    <PermissionForm
+                        key={sheetData.studentId + (sheetData.extendLeaveId || '') + (sheetData.lateType || '')}
+                        studentId={sheetData.studentId}
+                        extendLeaveId={sheetData.extendLeaveId}
+                        isLateSubmission={sheetData.isLate}
+                        lateSubmissionType={sheetData.lateType}
+                        onSuccess={() => {
+                            setIsSheetOpen(false);
+                            fetchProfileAndData(); 
+                        }}
+                    />
+                )}
+            </div>
+        </SheetContent>
+    </Sheet>
+    </>
   );
 }
 
