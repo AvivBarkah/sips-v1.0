@@ -3,7 +3,6 @@
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { supabase } from '@/lib/supabase-client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -212,12 +211,12 @@ function SuccessContent() {
                     </div>
                 </div>
 
-                <Link href="/dashboard" className="!mt-6 block">
-                    <Button className="w-full">
+                <div className="!mt-6 block">
+                    <Button className="w-full" onClick={() => router.replace('/dashboard')}>
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Kembali ke Dashboard
                     </Button>
-                </Link>
+                </div>
             </CardContent>
         </Card>
     );
