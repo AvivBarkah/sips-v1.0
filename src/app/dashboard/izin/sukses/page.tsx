@@ -68,7 +68,7 @@ function SuccessContent() {
                 .single();
 
             if (error || !data) {
-                console.error("Error fetching leave request:", error);
+                console.error("Error fetching leave request:", JSON.stringify(error, null, 2));
                 toast({
                     variant: 'destructive',
                     title: 'Gagal Memuat Data',
@@ -249,4 +249,3 @@ export default function SuccessPage() {
         </main>
     )
 }
-
