@@ -45,6 +45,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
+  SheetFooter,
 } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -131,6 +132,7 @@ export default function ParentDashboardPage() {
   // State for the sheet
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [sheetData, setSheetData] = React.useState<{ studentId: string; extendLeaveId?: string; isLate?: boolean; lateType?: 'new-late' | 'extend-late' } | null>(null);
+  const [isSubmittingSheet, setIsSubmittingSheet] = React.useState(false);
 
   const openPermissionSheet = (data: { studentId: string; extendLeaveId?: string; isLate?: boolean; lateType?: 'new-late' | 'extend-late' }) => {
     setSheetData(data);
@@ -464,6 +466,10 @@ export default function ParentDashboardPage() {
         </div>
     );
   }
+
+  const permissionFormId = "permission-form";
+  const isExtensionMode = !!sheetData?.extendLeaveId;
+  const isLateSubmission = !!sheetData?.isLate;
 
   return (
     <>
@@ -926,6 +932,7 @@ export default function ParentDashboardPage() {
                 {sheetData && (
                     <PermissionForm
                         key={sheetData.studentId + (sheetData.extendLeaveId || '') + (sheetData.lateType || '')}
+                        formId={permissionFormId}
                         studentId={sheetData.studentId}
                         extendLeaveId={sheetData.extendLeaveId}
                         isLateSubmission={sheetData.isLate}
@@ -934,14 +941,34 @@ export default function ParentDashboardPage() {
                             setIsSheetOpen(false);
                             fetchProfileAndData(); 
                         }}
+                        setIsSubmitting={setIsSubmittingSheet}
                     />
                 )}
             </div>
+            <SheetFooter className="p-6 pt-4 bg-background/95 backdrop-blur-sm">
+                <Button type="submit" form={permissionFormId} className="w-full text-base font-semibold py-6" disabled={isSubmittingSheet}>
+                     {isSubmittingSheet ? (
+                        <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Mengirim...
+                        </>
+                    ) : (
+                        isExtensionMode ? (
+                        <>
+                            <RefreshCw className="mr-2 h-4 w-4"/>
+                            Kirim Perpanjangan
+                        </>
+                        ) : isLateSubmission ? 'Kirim Pemberitahuan Susulan' : 'Kirim Pemberitahuan'
+                    )}
+                </Button>
+            </SheetFooter>
         </SheetContent>
     </Sheet>
     </>
   );
 }
+
+    
 
     
 

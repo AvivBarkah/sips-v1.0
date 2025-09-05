@@ -74,20 +74,29 @@ type LeaveRequest = {
 };
 
 interface PermissionFormProps {
+    formId: string;
     studentId: string;
     extendLeaveId?: string;
     isLateSubmission?: boolean;
     lateSubmissionType?: 'new-late' | 'extend-late';
     onSuccess: (leaveRequestId: string) => void;
+    setIsSubmitting: (isSubmitting: boolean) => void;
 }
 
-export function PermissionForm({ studentId, extendLeaveId, isLateSubmission, lateSubmissionType, onSuccess }: PermissionFormProps) {
+export function PermissionForm({ 
+    formId,
+    studentId, 
+    extendLeaveId, 
+    isLateSubmission, 
+    lateSubmissionType, 
+    onSuccess,
+    setIsSubmitting
+}: PermissionFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   
   const [student, setStudent] = React.useState<StudentData>(null);
   const [loading, setLoading] = React.useState(true);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
   
   const [isExtensionMode, setIsExtensionMode] = React.useState(!!extendLeaveId);
@@ -110,6 +119,12 @@ export function PermissionForm({ studentId, extendLeaveId, isLateSubmission, lat
       parentLeaveId: extendLeaveId || undefined,
     },
   });
+
+  const { formState: { isSubmitting } } = form;
+
+  React.useEffect(() => {
+      setIsSubmitting(isSubmitting);
+  }, [isSubmitting, setIsSubmitting]);
 
   React.useEffect(() => {
     async function fetchInitialData() {
@@ -298,11 +313,9 @@ export function PermissionForm({ studentId, extendLeaveId, isLateSubmission, lat
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         toast({ variant: "destructive", title: "Error", description: "Anda harus login untuk mengajukan izin." });
-        setIsSubmitting(false);
         return;
     }
 
@@ -312,7 +325,6 @@ export function PermissionForm({ studentId, extendLeaveId, isLateSubmission, lat
     if (file) {
         if (!student?.classes?.class_name) {
              toast({ variant: "destructive", title: "Gagal Mengunggah", description: "Nama kelas siswa tidak ditemukan." });
-             setIsSubmitting(false);
              return;
         }
 
@@ -329,7 +341,6 @@ export function PermissionForm({ studentId, extendLeaveId, isLateSubmission, lat
 
         if (uploadError) {
             toast({ variant: "destructive", title: "Gagal Mengunggah", description: `Gagal mengunggah dokumen: ${uploadError.message}` });
-            setIsSubmitting(false);
             return;
         }
         
@@ -349,8 +360,6 @@ export function PermissionForm({ studentId, extendLeaveId, isLateSubmission, lat
         document_url: documentUrl,
         parent_leave_id: values.parentLeaveId || null
     }).select().single();
-
-    setIsSubmitting(false);
 
     if (error) {
         toast({ variant: "destructive", title: "Gagal Mengirim", description: error.message });
@@ -380,7 +389,7 @@ export function PermissionForm({ studentId, extendLeaveId, isLateSubmission, lat
   return (
     <div className="p-6">
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form id={formId} onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                 control={form.control}
@@ -669,24 +678,6 @@ export function PermissionForm({ studentId, extendLeaveId, isLateSubmission, lat
                     {whatsappMessage}
                 </CardContent>
                 </Card>
-            </div>
-            
-            <div className="p-6 pt-2 sticky bottom-0 bg-background/95 backdrop-blur-sm">
-                <Button type="submit" className="w-full text-base font-semibold py-6" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                        <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Mengirim...
-                        </>
-                    ) : (
-                        isExtensionMode ? (
-                        <>
-                            <RefreshCw className="mr-2 h-4 w-4"/>
-                            Kirim Perpanjangan
-                        </>
-                        ) : isLateSubmission ? 'Kirim Pemberitahuan Susulan' : 'Kirim Pemberitahuan'
-                    )}
-                </Button>
             </div>
             </form>
         </Form>
