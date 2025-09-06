@@ -8,6 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Aplikasi Perizinan",
   description: "Aplikasi untuk mengajukan perizinan siswa.",
+  manifest: "/manifest.json",
 };
 
 export const dynamic = 'force-dynamic'
@@ -26,3 +27,5 @@ export default async function RootLayout({
     </html>
   );
 }
+
+    

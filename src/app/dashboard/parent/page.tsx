@@ -266,6 +266,41 @@ export default function ParentDashboardPage() {
   // State for success dialog
   const [newLeaveRequestId, setNewLeaveRequestId] = React.useState<string | null>(null);
 
+  // Android Back Button Handling
+  React.useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+        // This checks if the sheet is open when the back button is pressed.
+        if (isSheetOpen) {
+            // Prevent the default back navigation and close the sheet instead.
+            event.preventDefault();
+            setIsSheetOpen(false);
+        }
+    };
+
+    // Add the event listener when the component mounts.
+    window.addEventListener('popstate', handlePopState);
+
+    // Clean up the event listener when the component unmounts.
+    return () => {
+        window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isSheetOpen]);
+
+  // Manage browser history for the sheet
+  React.useEffect(() => {
+    if (isSheetOpen) {
+        // When the sheet opens, push a new state to the history.
+        // This allows the 'popstate' event to be triggered on back navigation.
+        window.history.pushState({ sheetOpen: true }, '');
+    } else {
+        // If the sheet is closed (and the current state is our sheet state),
+        // go back to remove our custom history entry.
+        if (window.history.state && window.history.state.sheetOpen) {
+            window.history.back();
+        }
+    }
+  }, [isSheetOpen]);
+
   const openPermissionSheet = (data: { studentId: string; extendLeaveId?: string; isLate?: boolean; lateType?: 'new-late' | 'extend-late' }) => {
     setSheetData(data);
     setIsSheetOpen(true);
