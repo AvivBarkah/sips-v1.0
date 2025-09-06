@@ -177,6 +177,9 @@ function SuccessDialog({ leaveRequestId, onOpenChange }: { leaveRequestId: strin
             <AlertDialogContent>
                 {loading ? (
                      <div className="flex flex-col items-center justify-center p-6 space-y-4">
+                        <AlertDialogHeader>
+                           <AlertDialogTitle className="sr-only">Memuat</AlertDialogTitle>
+                        </AlertDialogHeader>
                         <Loader2 className="w-12 h-12 animate-spin text-primary" />
                         <p className="text-muted-foreground">Memuat detail izin...</p>
                     </div>
@@ -1103,3 +1106,5 @@ export default function ParentDashboardPage() {
     </>
   );
 }
+
+    
