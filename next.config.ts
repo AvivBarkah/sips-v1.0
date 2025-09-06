@@ -2,6 +2,8 @@
 import type {NextConfig} from 'next';
 import withPWAInit from "@ducanh2912/next-pwa";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
@@ -36,7 +38,7 @@ const nextConfig: NextConfig = {
 
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV === "development",
+  disable: isDev,
   // add more options here
 });
 
