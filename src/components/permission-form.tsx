@@ -2,13 +2,12 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { addDays, format, parseISO, subDays } from "date-fns";
 import { id } from "date-fns/locale";
-import { Calendar as CalendarIcon, Upload, Loader2, FileText, X, RefreshCw } from "lucide-react";
+import { Calendar as CalendarIcon, Upload, FileText, X, RefreshCw } from "lucide-react";
 import { format as formatDate } from "date-fns-tz";
 
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -92,7 +91,6 @@ export function PermissionForm({
     onSuccess,
     setIsSubmitting
 }: PermissionFormProps) {
-  const router = useRouter();
   const { toast } = useToast();
   
   const [student, setStudent] = React.useState<StudentData>(null);
@@ -359,12 +357,11 @@ export function PermissionForm({
         status: 'AKTIF',
         document_url: documentUrl,
         parent_leave_id: values.parentLeaveId || null
-    }).select().single();
+    }).select('id').single();
 
     if (error) {
         toast({ variant: "destructive", title: "Gagal Mengirim", description: error.message });
     } else if (leaveRequestData) {
-        router.replace(`/dashboard/izin/sukses?id=${leaveRequestData.id}`);
         onSuccess(leaveRequestData.id);
     }
   }

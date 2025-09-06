@@ -37,7 +37,6 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Sheet,
@@ -50,7 +49,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCcwDot, PlusCircle, RefreshCw, CircleCheckBig, CircleX, Calendar, History, FileSignature, User, LogOut, CalendarRange, Loader2, AlertTriangle, Thermometer, FileText, Archive, BookPlus, HelpCircle } from "lucide-react";
+import { RefreshCcwDot, PlusCircle, RefreshCw, CircleCheckBig, CircleX, Calendar, History, FileSignature, User, LogOut, CalendarRange, Loader2, AlertTriangle, Thermometer, FileText, Archive, BookPlus, MessageCircle, Share, Copy, ArrowLeft } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, differenceInCalendarDays, parseISO, isWithinInterval, addDays, isPast, isToday, isAfter, startOfToday, isBefore, subDays, isSameDay } from "date-fns";
 import { id } from "date-fns/locale";
@@ -82,6 +81,9 @@ type LeaveRequest = {
     document_url: string | null;
     students: {
         full_name: string;
+        classes: {
+            class_name: string;
+        } | null;
     } | null;
     parent_leave_id: string | null;
 };
@@ -101,6 +103,129 @@ const getBadgeInfo = (activeLeave: StudentData['leave_requests'][0] | undefined)
     if (activeLeave.leave_type.toLowerCase() === 'sakit') return { text: "Sakit", className: "bg-red-100 text-red-800 border-red-200 capitalize" };
     if (activeLeave.leave_type.toLowerCase() === 'izin') return { text: "Izin", className: "bg-yellow-100 text-yellow-800 border-yellow-200 capitalize" };
     return { text: "Status Tidak Diketahui", className: "bg-gray-100 text-gray-800 border-gray-200" };
+}
+
+// Success Dialog Component
+function SuccessDialog({ leaveRequestId, onOpenChange }: { leaveRequestId: string | null; onOpenChange: (open: boolean) => void }) {
+    const { toast } = useToast();
+    const [leaveRequest, setLeaveRequest] = React.useState<LeaveRequest | null>(null);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        if (!leaveRequestId) return;
+
+        async function fetchLeaveRequest() {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('leave_requests')
+                .select(`id, leave_type, reason, start_date, end_date, students ( full_name, classes ( class_name ) )`)
+                .eq('id', leaveRequestId)
+                .single();
+
+            if (error || !data) {
+                console.error("Error fetching leave request:", JSON.stringify(error, null, 2));
+                toast({
+                    variant: 'destructive',
+                    title: 'Gagal Memuat Detail Izin',
+                    description: 'Tidak dapat memuat detail izin yang baru saja Anda buat.',
+                });
+                onOpenChange(false);
+            } else {
+                setLeaveRequest(data as LeaveRequest);
+            }
+            setLoading(false);
+        }
+
+        fetchLeaveRequest();
+    }, [leaveRequestId, toast, onOpenChange]);
+
+    const whatsappMessage = React.useMemo(() => {
+        if (!leaveRequest || !leaveRequest.students) return "";
+        const { full_name: studentName } = leaveRequest.students;
+        const studentClass = leaveRequest.students.classes?.class_name || "kelasnya";
+        const { leave_type: reasonType, start_date, end_date, reason } = leaveRequest;
+        const startDate = parseISO(start_date);
+        const endDateParsed = parseISO(end_date);
+        const durationDays = differenceInCalendarDays(endDateParsed, startDate) + 1;
+        const startDateFormatted = format(startDate, "EEEE, d MMMM yyyy", { locale: id });
+        
+        let message = durationDays === 1
+            ? `Assalamu'alaikum Wr. Wb.\n\nYth. Bapak/Ibu Wali Kelas ${studentClass}\n\nDengan ini kami beritahukan bahwa ananda ${studentName} tidak dapat masuk sekolah pada hari ini, ${startDateFormatted} dikarenakan ${reasonType.toLowerCase()}.`
+            : `Assalamu'alaikum Wr. Wb.\n\nYth. Bapak/Ibu Wali Kelas ${studentClass}\n\nDengan ini kami beritahukan bahwa ananda ${studentName} tidak dapat masuk sekolah selama ${durationDays} hari, dari tanggal ${startDateFormatted} s.d. ${format(endDateParsed, "EEEE, d MMMM yyyy", { locale: id })} dikarenakan ${reasonType.toLowerCase()}.`;
+        
+        if (reason) message += `\nKeterangan: ${reason}`;
+        message += `\n\nAtas perhatian Bapak/Ibu Guru, kami ucapkan terima kasih.\nWassalamu'alaikum Wr. Wb.`;
+        return message;
+    }, [leaveRequest]);
+
+    const handleCopyTemplate = () => {
+        navigator.clipboard.writeText(whatsappMessage).then(() => {
+            toast({ title: 'Berhasil Disalin', description: 'Template pesan WhatsApp telah disalin.' });
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            toast({ variant: 'destructive', title: 'Gagal Menyalin' });
+        });
+    };
+
+    const handleShareToWhatsApp = () => {
+        window.open(`https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`, '_blank');
+    };
+    
+    return (
+        <AlertDialog open={!!leaveRequestId} onOpenChange={onOpenChange}>
+            <AlertDialogContent>
+                {loading ? (
+                     <div className="flex flex-col items-center justify-center p-6 space-y-4">
+                        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                        <p className="text-muted-foreground">Memuat detail izin...</p>
+                    </div>
+                ) : leaveRequest && (
+                    <>
+                        <AlertDialogHeader className="text-center items-center">
+                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                                <CircleCheckBig className="w-8 h-8 text-green-600" />
+                            </div>
+                            <AlertDialogTitle className="text-xl">Pemberitahuan Terkirim!</AlertDialogTitle>
+                            <AlertDialogDescription className="pt-1">
+                                Pemberitahuan izin untuk {leaveRequest.students?.full_name || 'siswa'} berhasil dikirim dan dicatat.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="py-2 space-y-4">
+                             <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-left">
+                                <div className="flex items-center gap-2 text-green-800 text-sm">
+                                    <MessageCircle className="w-4 h-4" />
+                                    <span className="font-medium">Notifikasi WhatsApp Terkirim</span>
+                                </div>
+                                <p className="text-xs text-green-700 mt-1">Pemberitahuan otomatis (simulasi) telah dikirim ke Wali Kelas.</p>
+                            </div>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-left">
+                                <div className="flex items-center gap-2 text-blue-800 text-sm mb-3">
+                                    <Share className="w-4 h-4" />
+                                    <span className="font-medium">Bagikan Template Manual</span>
+                                </div>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                    <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700 text-white" onClick={handleShareToWhatsApp}>
+                                        <MessageCircle className="w-3 h-3 mr-1" />
+                                        Kirim ke Grup Kelas
+                                    </Button>
+                                    <Button variant="outline" size="sm" className="flex-1" onClick={handleCopyTemplate}>
+                                        <Copy className="w-3 h-3 mr-1" />
+                                        Salin Template
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                        <AlertDialogFooter>
+                            <AlertDialogAction className="w-full" onClick={() => onOpenChange(false)}>
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Kembali ke Dashboard
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </>
+                )}
+            </AlertDialogContent>
+        </AlertDialog>
+    )
 }
 
 
@@ -133,6 +258,9 @@ export default function ParentDashboardPage() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [sheetData, setSheetData] = React.useState<{ studentId: string; extendLeaveId?: string; isLate?: boolean; lateType?: 'new-late' | 'extend-late' } | null>(null);
   const [isSubmittingSheet, setIsSubmittingSheet] = React.useState(false);
+
+  // State for success dialog
+  const [newLeaveRequestId, setNewLeaveRequestId] = React.useState<string | null>(null);
 
   const openPermissionSheet = (data: { studentId: string; extendLeaveId?: string; isLate?: boolean; lateType?: 'new-late' | 'extend-late' }) => {
     setSheetData(data);
@@ -215,7 +343,7 @@ export default function ParentDashboardPage() {
                 id,
                 full_name,
                 classes ( class_name ),
-                leave_requests ( id, leave_type, start_date, end_date, reason, status, document_url, students ( full_name ), parent_leave_id )
+                leave_requests ( id, leave_type, start_date, end_date, reason, status, document_url, students ( full_name, classes ( class_name ) ), parent_leave_id )
             `)
             .in('id', studentIds);
         
@@ -244,7 +372,7 @@ export default function ParentDashboardPage() {
                 await Promise.all(updatePromises);
                 const { data: refreshedStudentData, error: refreshedError } = await supabase
                     .from('students')
-                    .select(`id, full_name, classes ( class_name ), leave_requests ( id, leave_type, start_date, end_date, reason, status, document_url, students ( full_name ), parent_leave_id )`)
+                    .select(`id, full_name, classes ( class_name ), leave_requests ( id, leave_type, start_date, end_date, reason, status, document_url, students ( full_name, classes ( class_name ) ), parent_leave_id )`)
                     .in('id', studentIds);
                 
                 if (refreshedError) console.error("Error refetching student data:", refreshedError);
@@ -937,8 +1065,9 @@ export default function ParentDashboardPage() {
                         extendLeaveId={sheetData.extendLeaveId}
                         isLateSubmission={sheetData.isLate}
                         lateSubmissionType={sheetData.lateType}
-                        onSuccess={() => {
+                        onSuccess={(id) => {
                             setIsSheetOpen(false);
+                            setNewLeaveRequestId(id); // Show success dialog
                             fetchProfileAndData(); 
                         }}
                         setIsSubmitting={setIsSubmittingSheet}
@@ -964,12 +1093,12 @@ export default function ParentDashboardPage() {
             </SheetFooter>
         </SheetContent>
     </Sheet>
+    <SuccessDialog 
+        leaveRequestId={newLeaveRequestId} 
+        onOpenChange={(open) => {
+            if (!open) setNewLeaveRequestId(null);
+        }}
+    />
     </>
   );
 }
-
-    
-
-    
-
-    
